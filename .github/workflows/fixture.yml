@@ -1,0 +1,34 @@
+name: fixture
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      outcome:
+        description: "pass, fail-once or wait"
+        required: false
+        default: pass
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      matrix:
+        part: [a, b]
+    runs-on: ubuntu-latest
+    steps:
+      - name: build part
+        run: echo "part ${{ matrix.part }}"
+  check:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: outcome
+        env:
+          OUTCOME: ${{ inputs.outcome }}
+          ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          if [ "$OUTCOME" = "fail-once" ] && [ "$ATTEMPT" = "1" ]; then echo "failing attempt 1"; exit 1; fi
+          if [ "$OUTCOME" = "wait" ]; then sleep 900; fi
+          echo ok
